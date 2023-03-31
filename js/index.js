@@ -34,6 +34,8 @@ const chipSetsRadioGroup = document.getElementById("chipsets");
 const mainContainer = document.getElementById("mainContainer");
 
 const diyButton = document.getElementById("diy")
+const quickstartButton = document.getElementById("quickstart")
+const quickstarttabcontent = document.getElementById("quickstarttabcontent")
 let resizeTimeout = false;
 
 // Implementaion of serialBasic terminal1 start
@@ -166,6 +168,7 @@ let espLoaderTerminal = {
 let partsArray = undefined
 let addressesArray = undefined
 function build_DIY_UI(application){
+  console.warn(application)
   let chipType = undefined
   let chipInConfToml = undefined
   let imageString = undefined;
@@ -218,9 +221,18 @@ function build_DIY_UI(application){
       // Column 2 - File selector
       var cell2 = row.insertCell(1);
       var element2 = document.createElement("p");
-      element2.innerText = partsArray[index]
+      // element2.style.overflow = "hidden"
+      // element2.style.textOverflow = "ellipsis"
+      if(config.firmware_images_url !== "" && config.firmware_images_url !== undefined )
+      {
+        element2.innerText = partsArray[index]
+      }else{
+        let binImageUrl = partsArray[index]
+        let filename = binImageUrl.substring(binImageUrl.lastIndexOf('/')+1,binImageUrl.indexOf('?'));
+        element2.innerText = filename
+        console.warn(filename)
+      }
       cell2.appendChild(element2);
-      
       // Column 3  - Remove File
       var cell3 = row.insertCell(2);
       var element3 = document.createElement("input");
@@ -246,6 +258,14 @@ flashfirmwarebutton.addEventListener("click", async function () {
   isConsoleWork = false;
   entrybuttons.style.display = "none";
   entrybuttonslabel.style.display = "none";
+  if (config["multipart"]) {
+    ensureConnect.style.display ="none"
+    lblConnTo.innerHTML =
+    "<b><span style='color:red'>Please wait we are making console ready for you...</span>";
+    ("</b>");
+    lblConnTo.style.display = "block"
+    consoleButton.click()
+  }
   if (isFlash && !isConsoleWork) {
     try {
       esploader = new ESPLoader(transport1, baudrates1.value, espLoaderTerminal);
@@ -262,7 +282,7 @@ flashfirmwarebutton.addEventListener("click", async function () {
   console.log(config["multipart"])
   if(config["multipart"]){
     // build_DIY_UI(deviceTypeSelect.value);
-    diyButton.click()
+    programButton.click()
     $("#programwrapper")
     .tooltip()
     .attr(
@@ -347,11 +367,15 @@ consoleworkbutton.addEventListener("click", async function () {
   }
 });
 consoleButton.addEventListener("click",function(){
-  let initiallblConnToIextContent = lblConnTo.innerHTML
-  lblConnTo.innerHTML = `<b><span style='color:red'>Click on Reset Device button after enabled.</span></b>`;
-  setTimeout(() => {
-    lblConnTo.innerHTML =initiallblConnToIextContent
-  }, 2000);
+  if (!config["multipart"]) {
+    let initiallblConnToIextContent = lblConnTo.innerHTML
+    lblConnTo.innerHTML = `<b><span style='color:red'>Click on Reset Device button after enabled.</span></b>`;
+    setTimeout(() => {
+      lblConnTo.innerHTML =initiallblConnToIextContent
+    }, 2000);
+    
+  }
+
 })
 // Build the Quick Try UI using the config toml file. If external path is not specified, pick up the default config
 async function buildQuickTryUI() {
@@ -415,6 +439,7 @@ function buildQuickTryUI_v1_0() {
     }
     if(config["multipart"]){
       build_DIY_UI(deviceTypeSelect.value)
+      quickstarttabcontent.style.display = "none"
       diyButton.click()
     }
     setAppURLs(config[supported_apps[0]]);
@@ -422,6 +447,7 @@ function buildQuickTryUI_v1_0() {
 
 function addDeviceTypeOption(apps) {
     deviceTypeSelect.innerHTML = "";
+    console.warn("hi...")
     apps.forEach(app => {
         var app_config = config[app];
             var option = document.createElement("option");
@@ -667,6 +693,8 @@ connectButton1.onclick = async () => {
       "Click on 'Set Baudrate For Flashing' Button in Quickstart"
     );
     // diyButton.click()
+    quickstartButton.click()
+    
   }
 };
 
@@ -1173,12 +1201,18 @@ programButton.onclick = async () => {
     {
       console.log(err)
       postProgramFlashClickFormultiparts();    
-        // IntervalForFlashThroughProgramButton();
+      IntervalForFlashThroughProgramButton();
     }
     progressMsgDIY.style.display = "inline";
     console.log(partsArray,addressesArray)
     try {
-        await downloadAndFlashForMultiparts()
+      console.warn(config)
+       if (config.firmware_images_url !== "" && config.firmware_images_url !== undefined )
+       {
+         await downloadAndFlashForMultiparts()
+       }else{
+        await downloadAndFlashForEZC()
+       }
     } catch (error) {
       console.log(error)
     }
@@ -1198,7 +1232,7 @@ programButton.onclick = async () => {
       // }
       
       // $("#console").click();
-      postProgramFlashDoneForMultiparts()
+      // postProgramFlashDoneForMultiparts()
   }else{
       esploader.status = "started"
       var err = validate_program_inputs();
@@ -1231,23 +1265,80 @@ programButton.onclick = async () => {
       }
       $("#console").click();
       console.log(fileArr)
-      await esploader.write_flash(fileArr, 'keep');
-       esploader.status = "complete"
-  }
+      try {
+        
+        await esploader.write_flash(fileArr, 'keep');
+        esploader.status = "complete"
+      } catch (error) {
+        console.log(error)
+      }
+    }
 };
 
 let IntervalForFlashThroughProgramButton = () => {
+  console.warn(esploader)
   let interval = setInterval(() => {
-    if (esploader !== undefined)
+    if (esploader !== undefined){
+console.warn("Inside IntervalForFlashThroughProgramButton")
       if (esploader.status === "complete") {
-        postProgramFlashDone();
+        if (config.firmware_images_url !== "" && config.firmware_images_url !== undefined) {
+          
+          postProgramFlashDone();
+        }else{
+          postProgramFlashDoneForMultiparts()
+        }
         clearInterval(interval);
+        console.warn(config)
       } else {
-        postProgramFlashClick();
+        if (config.firmware_images_url !== "" && config.firmware_images_url !== undefined) {
+          
+          postProgramFlashClick();
+        }else{
+          postProgramFlashClickFormultiparts()
+        }
+  
       }
+    }
   }, 3000);
 };
-
+async function downloadAndFlashForEZC(){
+  let fileArr = []
+  console.warn(partsArray,addressesArray)
+  for (let index = 0; index < partsArray.length; index ++) {
+  
+      let data = await new Promise(resolve => {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', partsArray[index], true);
+          xhr.responseType = "blob";
+          xhr.send();
+          xhr.onload = function () {
+              if (xhr.readyState === 4 && xhr.status === 200) {
+                  var blob = new Blob([xhr.response], {type: "application/octet-stream"});
+                  var reader = new FileReader();
+                  reader.onload = (function(theFile) {
+                      return function(e) {
+                          resolve(e.target.result);
+                      };
+                  })(blob);
+                  reader.readAsBinaryString(blob);
+              } else {
+                  resolve(undefined);
+              }
+          };
+          xhr.onerror = function() {
+              resolve(undefined);
+          }
+      });
+      fileArr.push({data:data, address:addressesArray[index]});
+  }
+  $('#console').click();
+  try {
+     console.log(fileArr)
+     await esploader.write_flash(fileArr,'keep');
+     esploader.status = "complete"
+  } catch (error) {
+    console.log(error)
+}}
 async function downloadAndFlashForMultiparts() {
   var file_server_url = config.firmware_images_url;
   let fileArr = []
@@ -1298,6 +1389,7 @@ async function downloadAndFlashForMultiparts() {
       try {
          console.log(fileArr)
          await esploader.write_flash(fileArr,'keep');
+         esploader.status = "complete"
       } catch (error) {
         console.log(error)
   // }
@@ -1471,8 +1563,31 @@ let postProgramFlashDoneForMultiparts = () => {
   disconnectButton1.disabled = false;
   eraseButton.disabled = false;
   deviceTypeSelect.disabled = false
-};
+  console.warn("Ith md file annane")
+  MDtoHtmlForEZC()
 
+};
+// Helper function to fetch Readme.md file and convert it to plain HTML
+function MDtoHtmlForEZC(){
+  console.warn(config[deviceTypeSelect.value]["readme.text"])
+  const EZCMessage = document.getElementById("EZCMessage")
+  var converter = new showdown.Converter({tables: true})
+   converter.setFlavor('github');
+$("#EZCConfirmation").click()
+try {
+  fetch(config[deviceTypeSelect.value]["readme.text"]).then(response =>{
+    return response.text()
+  }).then(result=>{
+    let htmlText = converter.makeHtml( result);
+    EZCMessage.innerHTML = htmlText
+
+
+  })
+  
+} catch (error) {
+  console.warn(error)
+}
+}
 flashButton.onclick = async () => {
     let flashFile = $("input[type='radio'][name='chipType']:checked").val();
 
@@ -1528,3 +1643,11 @@ Array.prototype.forEach.call(links, function (elem, index) {
     });
   }
 });
+
+const buttons = document.getElementsByTagName("button");
+for (const button of buttons) {
+  if (button.disabled) {
+    button.classList.add("disabledButtonStyle");
+  }
+
+}
