@@ -1,42 +1,50 @@
 .logo {
     width: 325px;
 }
+/* EZC */
+@media only screen and (max-width: 780px) {
+.split{
+    flex-direction: column-reverse;
+}
+  }
+.terminal{
+  padding-left: 5px;
+}
+.split{
 
-  #command {
-    border-bottom: none;
-  }
-  
-  #flashfirmwarebutton,
-  #consoleworkbutton {
-    margin-right: 10px;
-  }
-  #flashbaudrate,
-  #consoleworkbaudrate {
-    display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
+}
+.slide-right {
+    animation: 2.5s slide-right;
   }
-  #consoleworkmode,
-  #flashmode {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+  @keyframes slide-right {
+    from {
+      margin-left: -50%;
+    }
+    to {
+      margin-left: 0%;
+    }
   }
-  .entrybuttons {
-    display: flex;
-    justify-content: space-evenly;
-    flex-wrap: wrap;
-  }
-  .entrybuttonslabel {
-    text-align: center;
-    margin-top: -25px;
-  }
-  *:focus {
-    outline: none;
-  }
+.fadeInUp{
+  animation:fadeInUp 1s 1s ease backwards;
+}
+@keyframes fadeInUp{
+  0%{transform:translate(0px, 100px); opacity: 0;}
+  100%{transform:translate(0px, 0); opacity: 1;}
+}
+.fade-in {
+    animation: fadeIn ease 2s;
+}
   
+  
+  @keyframes fadeIn{
+    0% {
+      opacity:0;
+    }
+    100% {
+      opacity:1;
+    }
+  }
 .navbar-brand .tagline {
     font-size: 15px;
     color: var(--bs-gray-600);
@@ -178,6 +186,7 @@ footer {
 }
 
 .form .field-container .field select {
+    
     padding: 0.5em 3.5em 0.5em 1em;
     border: 1px solid var(--bs-gray-600);
     border-radius: 5px;
@@ -208,6 +217,7 @@ footer {
 }
 
 .app-button.submit-form-button {
+    
 }
 
 .main-page-tab-panel {
