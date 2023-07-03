@@ -89,7 +89,15 @@ async function downloadAndFlash() {
     }
     $('#console').click();
     try {
-        await esploader.write_flash(fileArr, 'keep');
+        const flashOptions = {
+            fileArray : fileArr,
+            flashSize: "keep",
+            flashMode: undefined,
+            flashFreq: undefined,
+            eraseAll: false,
+            compress: true,
+          };
+        await esploader.write_flash(flashOptions);
         esploader.status = "complete"
     } catch (error) {
     }
@@ -194,7 +202,12 @@ async function connectToDevice() {
     spinner.style.alignItems = "center";
 
     try {
-        esploader = new ESPLoader(transport, "921600", espLoaderTerminal);
+        const loaderOptions = {
+            transport: transport,
+            baudrate: 921600,
+            terminal: espLoaderTerminal
+          };
+        esploader = new ESPLoader(loaderOptions);
         connected = true;
 
         chipDesc = await esploader.main_fn();
